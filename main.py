@@ -8,6 +8,7 @@ from playwright._impl._api_types import TimeoutError
 from tiktokapipy import TikTokAPIError
 from tiktokapipy.async_api import AsyncTikTokAPI
 from tiktokapipy.models.video import video_link
+from tiktokapipy.models.user import User
 from windows_toasts import WindowsToaster, ToastText1
 from webbrowser import open as web_open
 
@@ -43,14 +44,18 @@ class Progressor:
                 print(f"{self.users_loaded}/{self.total_users} | Fetching user {unique_id}")
             for _ in range(retry_attempts):
                 try:
-                    return await api.user(user['user']['id'])
+                    user = await api.user(user['user']['id'])
+                    break
                 except TikTokAPIError as e:
                     print(e)
                 except TimeoutError:
+                    print("Timeout error trying to fetch user", unique_id)
                     pass
-        if unique_id not in self.known_videos:
-            self.known_videos[unique_id] = []
-        self.users_loaded += 1
+        if type(user) == User:
+            if unique_id not in self.known_videos:
+                self.known_videos[unique_id] = []
+            self.users_loaded += 1
+            return user
         if print_progress:
             print(f"Failed to fetch user {unique_id} after {retry_attempts} retries")
         return None
